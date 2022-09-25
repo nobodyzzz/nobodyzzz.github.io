@@ -1,0 +1,259 @@
+<html>
+    <head>
+        <title>.::</title>
+        <script type="text/javascript" src="processing.js"></script>
+        <script type="application/processing" data-processing-target="pjs">
+            class Pos {
+              float x, y, angle;
+              
+              Pos(float px, float py, float pangle) {
+                x = px;
+                y = py;
+                angle = pangle;
+              }
+              
+              float getX() { return x; }
+              float getY() { return y; }
+              float getAngle() { return angle; }
+            }
+
+            class Turtle {
+              float x, y; // Current position of the turtle
+              float angle = -90; // Current heading of the turtle
+              boolean penDown = true; // Is pen down?
+              ArrayList posStack;
+
+              // Set up initial position
+              Turtle (float xin, float yin) {
+                x = xin;
+                y = yin;
+                posStack = new ArrayList();
+              }
+
+              void pos(float nx, float ny) {
+                x = nx;
+                y = ny;
+                angle = -90;
+              }
+
+              // Move forward by the specified distance
+              void forward (float distance) {
+
+                // Calculate the new position
+                float xtarget = x+cos(radians(angle)) * distance;
+                float ytarget = y+sin(radians(angle)) * distance;
+
+                // If the pen is down, draw a line to the new position
+                if (penDown) line(x, y, xtarget, ytarget);
+
+                // Update position
+                x = xtarget;
+                y = ytarget;
+              }
+
+              // Move back by specified distance
+              void back (float distance) {
+                forward(-distance);
+              }
+
+              // Turn left by given angle
+              void left (float turnangle) {
+                angle -= turnangle;
+              }
+
+              // Turn right by given angle
+              void right (float turnangle) {
+                angle += turnangle;
+              }
+
+              // Set the pen to be up
+              void penUp() {
+                penDown = false;
+              }
+
+              // Set the pen to be down
+              void penDown_() {
+                penDown = true;
+              }
+              void pushPos() {
+                posStack.add(0, new Pos(x, y, angle));    
+              }
+              void popPos() {
+                if (!posStack.isEmpty()) {
+                  Pos pos = (Pos)posStack.get(0);
+                  posStack.remove(0);
+                  
+                  x = pos.getX();
+                  y = pos.getY();
+                  angle = pos.getAngle();
+                }
+              }
+            }
+
+            class LSystem {
+              String result;
+              float angle;
+              float stepsize;
+              float startX;
+              float startY;
+              String alphabet;
+              String[] rules;
+              
+              LSystem(String start, String alpha, String r1, String r2, int iters, float ang, float sz, float x, float y) {
+                if (alpha.length == 2) {
+                  result = start;
+                  angle = ang;
+                  stepsize = sz;
+                  startX = x;
+                  startY = y;
+                  alphabet = alpha;
+                  rules = new String[] {r1, r2};
+                }
+                while (iters-- != 0) {
+                  next();
+                }
+              }
+               LSystem(String start, char c, String rule, int iters, float ang, float sz, float x, float y) {
+                  result = start;
+                  angle = ang;
+                  stepsize = sz;
+                  startX = x;
+                  startY = y;
+                  alphabet = c;
+                  rules = new String[] {rule};
+                  while (iters-- != 0) {
+                    next();
+                  }
+                
+              }
+              
+              String getResult() {
+                return result;
+              }
+              
+              float getAngle() {
+                return angle;
+              }
+              
+              float getStepSize() {
+                return stepsize;
+              }
+              
+              float getStartX() {
+                return startX;
+              }
+              
+              float getStartY() {
+                return startY;
+              }
+              
+              void next() {
+                String ret = "";
+                for (int i = 0; i < result.length(); i++) {
+                  char c = result.charAt(i);
+                  int k = 0;
+
+                  for(k = 0; k < alphabet.length; k++) {
+                      if (c == alphabet.charAt(k)) {
+                          ret += rules[k];
+                          break;
+                      }
+                  }
+                  if (k == alphabet.length)
+                    ret += c;
+                }
+                result = ret;
+              }
+            }
+
+            void drawString(Turtle t, String s, float sz, float angle) {
+              for (int i = 0; i < s.length(); i++) {
+                switch(s.charAt(i)) {
+                case "F":
+                case "Y":
+                case "X":
+                case "L":
+                case "R":
+                  t.forward(sz);
+                  break;
+                case "f":
+                  t.penUp();
+                  t.forward(sz);
+                  t.penDown_();
+                  break;
+                case "+":
+                  t.right(angle);
+                  break;
+                case "-":
+                  t.left(angle);
+                  break;
+                case "[":
+                  t.pushPos();
+                  break;
+                case "]":
+                  t.popPos();
+                  break;
+                }
+              }
+            } 
+
+            Turtle t;
+            int i = 0;
+            int k = 0;
+            LSystem[] fracts; 
+
+            void setup() {
+                size(800, 800);
+                fracts = new LSystem[] {
+                    new LSystem("F", "F", "FF-[-F+F+F]+[+F-F-F]", 5, 22.5, 6, width / 2, height - 10),
+                    new LSystem("F", "F", "F[+F]F[-F]F", 5, 25.7, 3, width / 2 , height - 5),
+                    new LSystem("F", "F", "F[+F]F[-F][F]", 5, 20, 12, width / 2 , height - 5),
+                    new LSystem("X", "XF", "F[+X]F[-X]+X", "FF", 7, 20, 3, width / 2 , height - 5),
+                    new LSystem("X", "XF", "F[+X][-X]FX", "FF", 7, 20, 3, width / 2 , height - 5),
+                    new LSystem("X", "XF", "F-[[X]+X]+F[+FX]-X", "FF", 7, 20, 2, width / 2 , height - 5),
+                    new LSystem("F+F+F+F", "Ff", "F+f-FF+F+FF+Ff+FF-f+FF-F-FF-Ff-FFF", "ffffff", 2, 90, 9, 250, 550),
+                    new LSystem("F-F-F-F", "F", "FF-F-F-F-FF", 4, 90, 9, width - 37, height - 37),
+                    new LSystem("F-F-F-F", "F", "FF-F--F-F", 4, 90, 9, width - 37, height - 37),
+                    new LSystem("F-F-F-F", "F", "F-FF--F-F", 4, 90, 17, 550, 140),
+                    new LSystem("FX", "XY", "X+YF++YF-FX--FXFX-YF+", "-FX+YFYF++YF+FX--FX-Y", 4, 60, 6, 75, 300),
+                    new LSystem("FXF--FF--FF", "FX", "FF", "--FXF++FXF++FXF--", 6, 60, 6, width - 90 , height - 18),
+                    new LSystem("F+XF+F+XF", "X", "XF-F+F-XF+F+XF-F+F-X", 4, 90, 10, 15, 405),
+                    new LSystem("L", "LR", "+RF-LFL-FR+", "-LF+RFR+FL-", 6, 90, 5, 78, 715),
+                    new LSystem("FX", "XY", "X+YF+", "-FX-Y", 12, 90, 4, 300, 200),
+                    new LSystem("F+F+F+F", "F", "F-F+F+FFF-F-F+F", 3, 90, 6, 100, 400),
+                    new LSystem("F+F+F+F", "F", "-F+F-F-F+F+FF-F+F+FF+F-F-FF+FF-FF+F+F-FF-F-F+FF-F-F+F+F-F+", 2, 90, 5.5, 230, 565),
+                    new LSystem("F-F-F-F-F", "F", "F-F++F+F-F-F", 4, 72, 8.8, 45, 420),
+                    new LSystem("F", "FY", "F+F-F-F-Y+F+F+F-F", "YYY", 4, 90, 8.8, 400, 750),
+                };
+
+                t = new Turtle(width / 2 , 795);
+                background(255);
+                smooth();
+                k = 0; 
+
+            }
+
+            void draw(){
+                LSystem fract = fracts[k];
+                String f = fract.getResult();
+
+                if ( i < f.length()) {
+                    i += (f.length() / 50);
+                    background(255);
+                    t.pos(fract.getStartX(), fract.getStartY());
+                    drawString(t, i < f.length() ? f.substring(0, i) : f, fract.getStepSize(), fract.getAngle());
+                } else {
+                    background(255);
+                    i = 0;
+                    float w = millis();
+                    while (millis() - w < 500) ;
+                    k++;
+                    k %= fracts.length;
+                } 
+            }
+        </script>
+    </head>
+    <body>
+        <canvas id="pjs"></canvas>
+    </body>
+</html>

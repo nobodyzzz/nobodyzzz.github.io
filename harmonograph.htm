@@ -1,0 +1,141 @@
+<html style="overflow: hidden">
+    <head>
+        <title>.::</title>
+        <script type="text/javascript" src="processing.js"></script>
+        <script type="application/processing" data-processing-target="pjs">
+            Harmonograph curr;
+            Harmonograph prev;
+            int iterations;
+            float p_amplitude;
+            float p_xPhase;
+            float p_yPhase;
+            int p_spin;
+            float p_spinPhase;
+            float p_decay;
+            int p_xRatio;
+            int p_yRatio;
+            float c_amplitude;
+            float c_xPhase;
+            float c_yPhase;
+            int c_spin;
+            float c_spinPhase;
+            float c_decay;
+            int c_xRatio;
+            int c_yRatio;
+
+            class Harmonograph {
+              float amplitude;
+              float xPhase;
+              float yPhase;
+              int spin;
+              float spinPhase;
+              float decay;
+              int xRatio;
+              int yRatio;
+              int steps;
+              boolean drawn;
+
+              Harmonograph(float amplitude, float xPhase, float yPhase, int spin, float spinPhase, float decay, int xRatio, int yRatio) { 
+                this.amplitude = amplitude;
+                this.xPhase = xPhase;
+                this.yPhase = yPhase;
+                this.spin = spin;
+                this.spinPhase = spinPhase;
+                this.decay = decay;
+                this.xRatio = xRatio;
+                this.yRatio = yRatio;
+                steps = 0;
+                drawn = false;
+              }
+
+              void draw(int step) {
+                float x = 0;
+                float y = 0;
+                float ox = 0;
+                float oy = 0;
+                float a = amplitude;
+                int s = 0;
+
+                for (int i = 0; i < step; i++) {
+                  if (steps >= iterations) {
+                    drawn = true;
+                    return;
+                  }
+                  x = a * sin(radians(xRatio * steps) + xPhase) + a * sin(radians(spin*steps) + spinPhase);
+                  y = a * sin(radians(yRatio * steps) + yPhase);
+                  a *= (1 - decay);
+
+                  if (i != 0) 
+                    line(ox, oy, x, y);
+                  ox = x;
+                  oy = y;
+                  steps++;
+                }
+              }
+              boolean isDrawn() { return drawn; }
+            }
+
+            void setup() {
+              size(screenWidth, screenHeight + 100);
+              background(0);
+
+              c_amplitude = random(100, 250);
+              c_xPhase = random(-1.57, 1.57);
+              c_yPhase = random(-1.57, 1.57);
+              c_spin = (int)random(0, 20);
+              c_spinPhase = random(-1.57, 1.57);
+              c_decay = random(0, 5) / 10000;
+              c_xRatio = (int)random(0, 20);
+              c_yRatio = (int)random(0, 20);
+              iterations = (int)random(15, 150) * 1000;
+              curr = new Harmonograph(c_amplitude, c_xPhase, c_yPhase, c_spin, c_spinPhase, c_decay, c_xRatio, c_yRatio);
+            }
+
+            void set_color() {
+              colorMode(HSB, 360, 100, 100);
+              float h = noise(c_decay)*360;
+              stroke(h, 100, 100, 6);
+            }
+
+            void draw() {
+              if (curr.isDrawn()) {
+                p_amplitude = c_amplitude;
+                p_xPhase = c_xPhase;
+                p_yPhase = c_yPhase;
+                p_spin = c_spin;
+                p_spinPhase = c_spinPhase;
+                p_decay = c_decay;
+                p_xRatio = c_xRatio;
+                p_yRatio = c_yRatio;
+
+                c_amplitude = random(100, 250);
+                c_xPhase = random(-1.57, 1.57);
+                c_yPhase = random(-1.57, 1.57);
+                c_spin = (int)random(0, 20);
+                c_spinPhase = random(-1.57, 1.57);
+                c_decay = random(0, 5) / 10000;
+                c_xRatio = (int)random(0, 20);
+                c_yRatio = (int)random(0, 20);
+                curr = new Harmonograph(c_amplitude, c_xPhase, c_yPhase, c_spin, c_spinPhase, c_decay, c_xRatio, c_yRatio);
+                prev = new Harmonograph(p_amplitude, p_xPhase, p_yPhase, p_spin, p_spinPhase, p_decay, p_xRatio, p_yRatio);
+              }
+
+              translate(width / 2, height / 2);
+              if (prev != null && !prev.isDrawn()) {
+                stroke(0);
+                prev.draw(iterations / 5);
+                if (prev.isDrawn()) {
+                  background(0);
+                  iterations = (int)random(15, 150) * 1000;
+                }
+              } else {
+                set_color();
+                curr.draw(iterations / 20);
+              }
+            }
+        </script>
+    </head>
+    <body style="background: black;">
+        <canvas id="pjs"></canvas>
+    </body>
+</html>

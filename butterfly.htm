@@ -1,0 +1,135 @@
+<html style="overflow: hidden">
+    <head>
+        <title>.::</title>
+        <script type="text/javascript" src="processing.js"></script>
+        <script type="application/processing" data-processing-target="pjs">
+            int revolutions = 100; // The number of times round
+            float thetaStep = 0.01; // Angle increment
+            float rotation = 0; // The rotation offset
+            float yOffset = 0; // The y-offset
+            float amplitude = 50; // Scale of final drawing 
+            int steps = (int)(revolutions * PI / thetaStep);
+            float t = millis();
+            Butterfly curr;
+            Butterfly prev;
+            float p_a;
+            float p_b;
+            float p_c;
+            float p_A;
+            float p_B;
+            float c_a;
+            float c_b;
+            float c_c;
+            float c_A;
+            float c_B;
+
+
+            class Butterfly {
+              float theta = 0;
+              float x = 0;
+              float y = 0;
+              float ox = 0;
+              float oy = 0;
+              float  r = 0;
+              float a;
+              float b; 
+              float c;
+              float A;
+              float B;
+              int i = 0;
+              boolean drawn = false;
+
+              Butterfly(float a_, float b_, float c_, float A_, float B_) { 
+                a = a_;
+                b = b_;
+                c = c_;
+                A = A_;
+                B = B_;
+              }
+
+              void draw(int ddd) {
+                for (int k = 0; k <= ddd; k++) {
+                  if (i >= steps) {
+                    drawn = true;
+                    return;
+                  }
+                  r = (exp(cos(a * theta)) - A * cos(b * theta) + pow(sin(theta / c), B)) * amplitude; 
+                  x = r * cos(theta - rotation);
+                  y = r * sin(theta - rotation) + yOffset;
+
+                  if (i != 0) {
+                      line(ox, oy, x, y);
+                  }
+                  ox = x;
+                  oy = y;
+                  theta += thetaStep;
+
+                  i++;
+                }
+              }
+              boolean isDrawn() { return drawn; }
+            }
+
+            void setup() {
+              size(screenWidth, screenHeight + 100);
+              background(0);
+              stroke(255);
+              c_a = random(0.1, 20);
+              c_b = random(0.1, 20);
+              c_c = random(0.1, 100);
+              c_A = random(-10, 10);
+              c_B = random(1, 10);
+              p_a = c_a;
+              p_b = c_b;
+              p_c = c_c;
+              p_A = c_A;
+              p_B = c_B;
+              curr = new Butterfly(c_a, c_b, c_c, c_A, c_B);
+              prev = new Butterfly(p_a, p_b, p_c, p_A, p_B);
+            }
+
+            void draw() {
+              if (curr.isDrawn()) {
+                p_a = c_a;
+                p_b = c_b;
+                p_c = c_c;
+                p_A = c_A;
+                p_B = c_B;
+                c_a = random(0.1, 20);
+                c_b = random(0.1, 20);
+                c_c = random(0.1, 100);
+                c_A = random(-10, 10);
+                c_B = random(1, 10);
+                curr = new Butterfly(c_a, c_b, c_c, c_A, c_B);
+                prev = new Butterfly(p_a, p_b, p_c, p_A, p_B);
+              }
+              translate(width / 2, height / 2);
+              if (prev != null && !prev.isDrawn()) {
+                  stroke(0);
+                  prev.draw(5000);
+              } else { 
+                  stroke(255);
+                  curr.draw(1000);
+              }
+            }
+
+            void mousePressed() {
+                p_a = c_a;
+                p_b = c_b;
+                p_c = c_c;
+                p_A = c_A;
+                p_B = c_B;
+                c_a = random(0.1, 20);
+                c_b = random(0.1, 20);
+                c_c = random(0.1, 100);
+                c_A = random(-10, 10);
+                c_B = random(1, 10);
+                curr = new Butterfly(c_a, c_b, c_c, c_A, c_B);
+                prev = new Butterfly(p_a, p_b, p_c, p_A, p_B);
+            } 
+        </script>
+    </head>
+    <body style="background: black;">
+        <canvas id="pjs"></canvas>
+    </body>
+</html>
